@@ -1,0 +1,106 @@
+\documentclass[12pt]{beamer}
+\usepackage[T2A]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[russian]{babel}
+\usepackage{hyperref}
+\usepackage{tikz}
+\usepackage{minted}
+\title{Научно-исследовательская практика. Flipping Cookie}
+\node
+\author{Сухов Максим, Гервятович Олег}
+\date{1 Июля 2022}
+\usetheme{Dresden}
+\begin{document}
+%\maketitle
+\begin{titlepage}
+       
+\end{titlepage}
+\section{Ссылки}
+\begin{frame}{Ссылки}
+     \href{https://github.com/ogerv/praktika/issues}
+\end{frame}
+\section{Условие задачи}
+\begin{frame}{Условие задачи}
+    Дано какое-то значение cookie, которое состоит из двух частей:
+    \begin{enumerate}
+        \item Инициализирующий вектор (IV) — первые 16 байт.
+        \item Зашифрованная строка 
+    \end{enumerate}  
+    После с помощью некоторой фукнции мы получаем флаг  
+\end{frame}
+
+\section{Решение}
+\begin{frame}{Решение}
+    Мы расшифрованную строку проверяем на наличие “admin=True;”, если реальность такова, то мы получаем флаг.
+    \parНо на деле мы видим, что в изначальной строке записано “admin=False;” и мы не можем управлять этим текстом. Но мы можем менять либо шифротекст, либо инициализирующий вектор.
+\end{frame}
+
+\begin{frame}{Решение}
+    Менять мы будем инициализирущий вектор (IV), далее мы вспоминаем про XOR и его свойства
+\end{frame}
+
+\begin{frame}{Решение}
+  \begin{enumerate}
+        \item У нас есть инициализирующий вектор:
+        \par\textbf{IV = fff44b182176a547ed2cf05320cd7ac4}
+        \item При ксоре данных, полученных после расшифровки (T) с IV мы получим строку:
+        \par\textbf{IV xor T = “admin=False;…”}
+        \item И к этому мы хотим прийти:
+        \par\textbf{IV xor T = “admin=True;…”}
+    \end{enumerate}  
+\end{frame}
+
+\begin{frame}{Решение}
+Для этого сделаем следующее:
+  \begin{enumerate}
+        \item Определим данные, получаемые при расшифровке:
+        \par\footnotesize{T = IV xor “admin=False;” = 9e9026714f4be326815f956841a917ad}
+        \item\normalsize{Изменим IV:}
+        \par\footnotesize{IV = T xor “admin=True;” = fff44b182176b754f43aae0925c47ec3}
+    \end{enumerate}
+    Осталось только отправить серверу шифротекст с этим инициализирующим вектором, чтобы получить флаг
+\end{frame}
+\section{Исходный код}
+\begin{frame}[fragile]
+    \frametitle{Source Code}
+    \rule{\textwidth}{1pt}
+    \scriptsize
+    \begin{minted}{python}
+##Нужен для запроса на криптохак
+import requests
+##Нужен для того, чтобы десериализовать ответ с криптохака(куку)
+import json
+## XOR, тут и так понятно
+from Crypto.Util.strxor import strxor
+
+##Получает с криптохака куку и десереализует ее в текст
+def get_cookie():
+	return requests.get('https://aes.cryptohack.org/...).json()
+
+##Отправляет куку с iv на криптохак и получает флаг
+def get_flag(cookie, iv):
+	return requests.get('https://aes.cryptohack.org/...).json()
+##Кука с криптохака
+Cookie=get_cookie()['cookie']
+##iv, выдранный из куки
+IV=bytes.fromhex(Cookie[:32])
+    \end{minted} 
+\end{frame}
+\begin{frame}[fragile]
+    \frametitle{Source Code}
+    \rule{\textwidth}{1pt}
+    \scriptsize
+    \begin{minted}{python}
+##потребуются для подмены
+FalseAdminBytes=b'admin=False;expi'  
+TrueAdminBytes=b'admin=True;expir'
+
+##Для того, чтобы подменить значение admin-а мы "ксорим" iv и значение admin=false, т.к. "ксорить" саму зашифрованную строку нет смысла
+XORedIVFalse=strxor(IV,FalseAdminBytes)
+##Тут мы получаем модифицированный iv, который уже при расшифровке даст нам admin=true
+XORedIVTrue=strxor(TrueAdminBytes,XORedIVFalse).hex()
+
+print(get_flag(Cookie[32:],XORedIVTrue)["flag"])
+    \end{minted}
+\end{frame}
+\end{document}
