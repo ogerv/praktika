@@ -6,7 +6,6 @@
 \usepackage{tikz}
 \usepackage{minted}
 \title{Научно-исследовательская практика. Flipping Cookie}
-\node
 \author{Сухов Максим, Гервятович Олег}
 \date{1 Июля 2022}
 \usetheme{Dresden}
@@ -17,7 +16,7 @@
 \end{titlepage}
 \section{Ссылки}
 \begin{frame}{Ссылки}
-     \href{https://github.com/ogerv/praktika/issues}
+     \href{https://github.com/ogerv/praktika}{Репа с файлами}
 \end{frame}
 \section{Условие задачи}
 \begin{frame}{Условие задачи}
@@ -95,9 +94,11 @@ IV=bytes.fromhex(Cookie[:32])
 FalseAdminBytes=b'admin=False;expi'  
 TrueAdminBytes=b'admin=True;expir'
 
-##Для того, чтобы подменить значение admin-а мы "ксорим" iv и значение admin=false, т.к. "ксорить" саму зашифрованную строку нет смысла
+##Для того, чтобы подменить значение admin-а мы "ксорим" iv 
+##и значение admin=false, т.к. "ксорить" саму зашифрованную строку нет смысла
 XORedIVFalse=strxor(IV,FalseAdminBytes)
-##Тут мы получаем модифицированный iv, который уже при расшифровке даст нам admin=true
+##Тут мы получаем модифицированный iv,
+##который уже при расшифровке даст нам admin=true
 XORedIVTrue=strxor(TrueAdminBytes,XORedIVFalse).hex()
 
 print(get_flag(Cookie[32:],XORedIVTrue)["flag"])
